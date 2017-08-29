@@ -35,8 +35,8 @@ import Basics exposing (..)
 {-| Representation of colors.
 -}
 type Color
-    = RGB Int Int Int Float
-    | HSL Float Float Float Float
+    = Rgb Int Int Int Float
+    | Hsl Float Float Float Float
 
 
 
@@ -46,25 +46,25 @@ type Color
 {-| Create RGB colors from numbers between 0 and 255 inclusive. -}
 rgb : Int -> Int -> Int -> Color
 rgb r g b =
-  RGB r g b 1
+  Rgb r g b 1
 
 
 {-| Create RGB colors with an alpha component for transparency.
 The alpha component is specified with numbers between 0 and 1. -}
 rgba : Int -> Int -> Int -> Float -> Color
 rgba =
-  RGB
+  Rgb
 
 
 {-| Extract the components of a color in the RGB format.
 -}
-toRgb : Color -> { red:Int, green:Int, blue:Int, alpha:Float }
+toRgb : Color -> { red : Int, green : Int, blue : Int, alpha : Float }
 toRgb color =
   case color of
-    RGB r g b a ->
+    Rgb r g b a ->
       { red = r, green = g, blue = b, alpha = a }
 
-    HSL h s l a ->
+    Hsl h s l a ->
       let
         (r,g,b) = hslToRgb h s l
       in
@@ -79,7 +79,7 @@ toRgb color =
 -- HSL
 
 
-{-| Create [HSL colors](http://en.wikipedia.org/wiki/HSL_and_HSV). This gives
+{-| Create [HSL colors](https://en.wikipedia.org/wiki/HSL_and_HSV). This gives
 you access to colors more like a color wheel, where all hues are arranged in a
 circle that you specify with standard Elm angles (radians).
 
@@ -94,16 +94,16 @@ is how vibrant the color is, like a dial between grey and bright colors. The
 lightness level is a dial between white and black.
 -}
 hsl : Float -> Float -> Float -> Color
-hsl hue saturation lightness =
-  hsla hue saturation lightness 1
+hsl h s l =
+  hsla h s l 1
 
 
-{-| Create [HSL colors](http://en.wikipedia.org/wiki/HSL_and_HSV)
+{-| Create [HSL colors](https://en.wikipedia.org/wiki/HSL_and_HSV)
 with an alpha component for transparency.
 -}
 hsla : Float -> Float -> Float -> Float -> Color
-hsla hue saturation lightness alpha =
-  HSL (hue - turns (toFloat (floor (hue / (2*pi))))) saturation lightness alpha
+hsla h s l a =
+  Hsl (h - turns (toFloat (floor (h / (2*pi))))) s l a
 
 
 {-| Extract the components of a color in the HSL format.
@@ -111,10 +111,10 @@ hsla hue saturation lightness alpha =
 toHsl : Color -> { hue : Float, saturation : Float, lightness : Float, alpha : Float }
 toHsl color =
   case color of
-    HSL h s l a ->
+    Hsl h s l a ->
       { hue = h, saturation = s, lightness = l, alpha = a }
 
-    RGB r g b a ->
+    Rgb r g b a ->
       let
         (h,s,l) = rgbToHsl r g b
       in
@@ -129,14 +129,14 @@ toHsl color =
 -}
 grayscale : Float -> Color
 grayscale p =
-  HSL 0 0 (1-p) 1
+  Hsl 0 0 (1-p) 1
 
 
 {-| Produce a gray based on the input. 0 is white, 1 is black.
 -}
 greyscale : Float -> Color
 greyscale p =
-  HSL 0 0 (1-p) 1
+  Hsl 0 0 (1-p) 1
 
 
 
