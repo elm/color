@@ -1,4 +1,4 @@
-module Color.Tango exposing
+module Color.Defaults exposing
   ( red, orange, yellow, green, blue, purple, brown
   , lightRed, lightOrange, lightYellow, lightGreen, lightBlue, lightPurple, lightBrown
   , darkRed, darkOrange, darkYellow, darkGreen, darkBlue, darkPurple, darkBrown
@@ -38,7 +38,7 @@ that has never helped me remember which one I should be writing.
 
 -}
 
-import Color exposing (rgb)
+import Color exposing (Color, rgb)
 
 
 

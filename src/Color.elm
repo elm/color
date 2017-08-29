@@ -1,7 +1,7 @@
 module Color exposing
   ( Color
-  , rgb, rgba, toRgb
-  , hsl, hsla, toHsl
+  , rgb, rgba, toRgb, Rgb
+  , hsl, hsla, toHsl, Hsl
   , greyscale, grayscale
   )
 
@@ -15,17 +15,15 @@ module Color exposing
 @docs Color
 
 # RGB
-@docs rgb, rgba, toRgb
+@docs rgb, rgba, toRgb, Rgb
 
 # HSL
-@docs hsl, hsla, toHsl
+@docs hsl, hsla, toHsl, Hsl
 
 # Greyscale
 @docs greyscale, grayscale
 
 -}
-
-import Basics exposing (..)
 
 
 
@@ -35,8 +33,8 @@ import Basics exposing (..)
 {-| Representation of colors.
 -}
 type Color
-    = Rgb Int Int Int Float
-    | Hsl Float Float Float Float
+    = RGBA Int Int Int Float
+    | HSLA Float Float Float Float
 
 
 
@@ -46,34 +44,79 @@ type Color
 {-| Create RGB colors from numbers between 0 and 255 inclusive. -}
 rgb : Int -> Int -> Int -> Color
 rgb r g b =
-  Rgb r g b 1
+  RGBA r g b 1
 
 
 {-| Create RGB colors with an alpha component for transparency.
 The alpha component is specified with numbers between 0 and 1. -}
 rgba : Int -> Int -> Int -> Float -> Color
 rgba =
-  Rgb
+  RGBA
+
+
+{-| The result of [`toRgb`](#toRgb). Convert it to CSS or whatever you need!
+-}
+type alias Rgb =
+  { red : Int
+  , green : Int
+  , blue : Int
+  , alpha : Float
+  }
 
 
 {-| Extract the components of a color in the RGB format.
 -}
-toRgb : Color -> { red : Int, green : Int, blue : Int, alpha : Float }
+toRgb : Color -> Rgb
 toRgb color =
   case color of
-    Rgb r g b a ->
-      { red = r, green = g, blue = b, alpha = a }
+    RGBA r g b a ->
+      Rgb r g b a
 
-    Hsl h s l a ->
+    HSLA hue saturation lightness alpha ->
       let
-        (r,g,b) = hslToRgb h s l
-      in
-        { red = round (255 * r)
-        , green = round (255 * g)
-        , blue = round (255 * b)
-        , alpha = a
-        }
+        chroma = (1 - abs (2 * lightness - 1)) * saturation
+        normHue = hue / degrees 60
 
+        x = chroma * (1 - abs (modFloatBy 2 normHue - 1))
+        m = lightness - chroma / 2
+
+        toColor c =
+          round (255 * (c + m))
+
+        toRgbHelp r g b =
+          Rgb (toColor r) (toColor g) (toColor b) alpha
+      in
+      if normHue < 0 then
+        toRgbHelp 0 0 0
+
+      else if normHue < 1 then
+        toRgbHelp chroma x 0
+
+      else if normHue < 2 then
+        toRgbHelp x chroma 0
+
+      else if normHue < 3 then
+        toRgbHelp 0 chroma x
+
+      else if normHue < 4 then
+        toRgbHelp 0 x chroma
+
+      else if normHue < 5 then
+        toRgbHelp x 0 chroma
+
+      else if normHue < 6 then
+        toRgbHelp chroma 0 x
+
+      else
+        toRgbHelp 0 0 0
+
+
+modFloatBy : Int -> Float -> Float
+modFloatBy n float =
+  let
+    integer = floor float
+  in
+    toFloat (modBy n integer) + float - toFloat integer
 
 
 -- HSL
@@ -103,22 +146,57 @@ with an alpha component for transparency.
 -}
 hsla : Float -> Float -> Float -> Float -> Color
 hsla h s l a =
-  Hsl (h - turns (toFloat (floor (h / (2*pi))))) s l a
+  HSLA (h - turns (toFloat (floor (h / (2*pi))))) s l a
+
+
+{-| The result of [`toHsl`](#toHsl). Convert it to CSS or whatever you need!
+-}
+type alias Hsl =
+  { hue : Float
+  , saturation : Float
+  , lightness : Float
+  , alpha : Float
+  }
 
 
 {-| Extract the components of a color in the HSL format.
 -}
-toHsl : Color -> { hue : Float, saturation : Float, lightness : Float, alpha : Float }
+toHsl : Color -> Hsl
 toHsl color =
   case color of
-    Hsl h s l a ->
-      { hue = h, saturation = s, lightness = l, alpha = a }
+    HSLA h s l a ->
+      Hsl h s l a
 
-    Rgb r g b a ->
+    RGBA red green blue alpha ->
       let
-        (h,s,l) = rgbToHsl r g b
+        r = toFloat red   / 255
+        g = toFloat green / 255
+        b = toFloat blue  / 255
+
+        cMax = max (max r g) b
+        cMin = min (min r g) b
+
+        c = cMax - cMin
+
+        hue =
+          degrees 60 *
+            if cMax == r then
+              modFloatBy 6 ((g - b) / c)
+            else if cMax == g then
+              ((b - r) / c) + 2
+            else {- cMax == b -}
+              ((r - g) / c) + 4
+
+        lightness =
+          (cMax + cMin) / 2
+
+        saturation =
+          if lightness == 0 then
+            0
+          else
+            c / (1 - abs (2 * lightness - 1))
       in
-        { hue = h, saturation = s, lightness = l, alpha = a }
+      Hsl hue saturation lightness alpha
 
 
 
@@ -129,79 +207,11 @@ toHsl color =
 -}
 grayscale : Float -> Color
 grayscale p =
-  Hsl 0 0 (1-p) 1
+  HSLA 0 0 (1-p) 1
 
 
 {-| Produce a gray based on the input. 0 is white, 1 is black.
 -}
 greyscale : Float -> Color
 greyscale p =
-  Hsl 0 0 (1-p) 1
-
-
-
--- COLOR SPACE CONVERSIONS
-
-
-rgbToHsl : Int -> Int -> Int -> (Float,Float,Float)
-rgbToHsl red green blue =
-  let
-    r = toFloat red   / 255
-    g = toFloat green / 255
-    b = toFloat blue  / 255
-
-    cMax = max (max r g) b
-    cMin = min (min r g) b
-
-    c = cMax - cMin
-
-    hue =
-      degrees 60 *
-        if cMax == r then
-          fmod ((g - b) / c) 6
-        else if cMax == g then
-          ((b - r) / c) + 2
-        else {- cMax == b -}
-          ((r - g) / c) + 4
-
-    lightness =
-      (cMax + cMin) / 2
-
-    saturation =
-      if lightness == 0 then
-        0
-      else
-        c / (1 - abs (2 * lightness - 1))
-  in
-    (hue, saturation, lightness)
-
-
-hslToRgb : Float -> Float -> Float -> (Float,Float,Float)
-hslToRgb hue saturation lightness =
-  let
-    chroma = (1 - abs (2 * lightness - 1)) * saturation
-    normHue = hue / degrees 60
-
-    x = chroma * (1 - abs (fmod normHue 2 - 1))
-
-    (r,g,b) =
-      if normHue < 0 then (0, 0, 0)
-      else if normHue < 1 then (chroma, x, 0)
-      else if normHue < 2 then (x, chroma, 0)
-      else if normHue < 3 then (0, chroma, x)
-      else if normHue < 4 then (0, x, chroma)
-      else if normHue < 5 then (x, 0, chroma)
-      else if normHue < 6 then (chroma, 0, x)
-      else (0, 0, 0)
-
-    m = lightness - chroma / 2
-  in
-    (r + m, g + m, b + m)
-
-
-fmod : Float -> Int -> Float
-fmod f n =
-  let
-    integer = floor f
-  in
-    toFloat (integer % n) + f - toFloat integer
+  HSLA 0 0 (1-p) 1
