@@ -1,13 +1,17 @@
 module Color.Hsl exposing
-  ( toRgb
+  ( toRgb255
+  , fromRgb255
+  , toRgb
   , fromRgb
-  , toRgb1
-  , fromRgb1
   )
 
 
+import Color.Rgb
+import Color.Rgb255
 
-toRgb
+
+
+toRgb255
   : Float
   -> Float
   -> Float
@@ -17,11 +21,11 @@ toRgb
       , blue : Int
       , alpha : Float
       }
-toRgb =
-  Rgb.fromHsl
+toRgb255 =
+  Rgb255.fromHsl
 
 
-toRgb1
+toRgb
   : Float
   -> Float
   -> Float
@@ -31,11 +35,11 @@ toRgb1
       , blue : Float
       , alpha : Float
       }
-toRgb1 =
-  Rgb1.fromHsl
+toRgb =
+  Rgb.fromHsl
 
 
-fromRgb1
+fromRgb
   : Float
   -> Float
   -> Float
@@ -45,11 +49,11 @@ fromRgb1
       , lightness : Float
       , alpha : Float
       }
-fromRgb1 =
-  Rgb1.toHsl
+fromRgb =
+  Rgb.toHsl
 
 
-fromRgb
+fromRgb255
   : Int
   -> Int
   -> Int
@@ -59,5 +63,5 @@ fromRgb
       , lightness : Float
       , alpha : Float
       }
-fromRgb =
-  Rgb.toHsl
+fromRgb255 =
+  Rgb255.toHsl
