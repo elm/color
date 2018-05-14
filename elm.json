@@ -1,12 +1,13 @@
 {
     "type": "package",
     "name": "elm-lang/color",
-    "summary": "Standard representation of colors, encouraging sharing between packages.",
+    "summary": "Conversions between color spaces, like RGB and HSL.",
     "license": "BSD-3-Clause",
     "version": "1.0.0",
     "exposed-modules": [
-        "Color",
-        "Color.Defaults"
+        "Color.Rgb",
+        "Color.Rgb255",
+        "Color.Hsl"
     ],
     "elm-version": "0.19.0 <= v < 0.20.0",
     "dependencies": {
